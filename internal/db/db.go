@@ -46,6 +46,7 @@ func Init() error {
 		&model.User{},
 		&model.Family{},
 		&model.FamilyMember{},
+		&model.FamilyInvite{},
 		&model.Baby{},
 		&model.BabyAction{},
 	); err != nil {

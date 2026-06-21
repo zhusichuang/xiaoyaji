@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"wxcloudrun-golang/internal/middleware"
 	"wxcloudrun-golang/internal/model"
@@ -14,6 +15,10 @@ import (
 
 type createFamilyRequest struct {
 	Name string `json:"name"`
+}
+
+type joinFamilyRequest struct {
+	Code string `json:"code"`
 }
 
 func ListFamilies(c *gin.Context) {
@@ -69,4 +74,52 @@ func CreateFamily(c *gin.Context) {
 	}
 
 	success(c, gin.H{"family_id": family.ID})
+}
+
+func GetFamilyDetail(c *gin.Context) {
+	familyID, err := strconv.ParseUint(c.Param("familyID"), 10, 64)
+	if err != nil || familyID == 0 {
+		fail(c, http.StatusBadRequest, errors.New("family_id 非法"))
+		return
+	}
+
+	detail, err := service.GetFamilyDetail(middleware.CurrentOpenID(c), uint(familyID))
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	success(c, detail)
+}
+
+func CreateFamilyInviteCode(c *gin.Context) {
+	familyID, err := strconv.ParseUint(c.Param("familyID"), 10, 64)
+	if err != nil || familyID == 0 {
+		fail(c, http.StatusBadRequest, errors.New("family_id 非法"))
+		return
+	}
+
+	invite, err := service.CreateFamilyInviteCode(middleware.CurrentOpenID(c), uint(familyID))
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	success(c, gin.H{"invite": invite})
+}
+
+func JoinFamily(c *gin.Context) {
+	var req joinFamilyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	family, err := service.JoinFamilyByCode(middleware.CurrentOpenID(c), req.Code)
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	success(c, gin.H{"family": family})
 }
