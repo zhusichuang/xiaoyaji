@@ -1,20 +1,19 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
-	"wxcloudrun-golang/db"
-	"wxcloudrun-golang/service"
+
+	"wxcloudrun-golang/internal/app"
+	"wxcloudrun-golang/internal/db"
 )
 
 func main() {
 	if err := db.Init(); err != nil {
-		panic(fmt.Sprintf("mysql init failed with %+v", err))
+		log.Fatalf("init mysql failed: %v", err)
 	}
 
-	http.HandleFunc("/", service.IndexHandler)
-	http.HandleFunc("/api/count", service.CounterHandler)
-
-	log.Fatal(http.ListenAndServe(":80", nil))
+	router := app.NewRouter()
+	if err := router.Run(":80"); err != nil {
+		log.Fatalf("start server failed: %v", err)
+	}
 }
