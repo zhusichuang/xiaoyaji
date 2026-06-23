@@ -103,6 +103,55 @@ func CreateFamilyInviteCode(openID string, familyID uint) (*model.FamilyInvite, 
 	return invite, nil
 }
 
+func UpdateFamilyName(openID string, familyID uint, name string) (*model.Family, error) {
+	user, member, err := RequireFamilyMember(openID, familyID)
+	if err != nil {
+		return nil, err
+	}
+	if member.Role != "owner" {
+		return nil, errors.New("仅家庭创建者可以编辑家庭")
+	}
+
+	cleanName := strings.TrimSpace(name)
+	if cleanName == "" {
+		return nil, errors.New("家庭名称不能为空")
+	}
+
+	family, err := repository.FindFamilyByID(familyID)
+	if err != nil {
+		return nil, err
+	}
+	if family.OwnerUserID != user.ID {
+		return nil, errors.New("仅家庭创建者可以编辑家庭")
+	}
+
+	family.Name = cleanName
+	if err := repository.SaveFamily(family); err != nil {
+		return nil, err
+	}
+	return family, nil
+}
+
+func DeleteFamily(openID string, familyID uint) error {
+	user, member, err := RequireFamilyMember(openID, familyID)
+	if err != nil {
+		return err
+	}
+	if member.Role != "owner" {
+		return errors.New("仅家庭创建者可以删除家庭")
+	}
+
+	family, err := repository.FindFamilyByID(familyID)
+	if err != nil {
+		return err
+	}
+	if family.OwnerUserID != user.ID {
+		return errors.New("仅家庭创建者可以删除家庭")
+	}
+
+	return repository.DeleteFamilyByID(familyID)
+}
+
 func JoinFamilyByCode(openID string, code string) (*model.Family, error) {
 	user, err := CurrentUser(openID)
 	if err != nil {

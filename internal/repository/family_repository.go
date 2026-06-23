@@ -3,6 +3,8 @@ package repository
 import (
 	"wxcloudrun-golang/internal/db"
 	"wxcloudrun-golang/internal/model"
+
+	"gorm.io/gorm"
 )
 
 type FamilyMemberProfile struct {
@@ -52,6 +54,10 @@ func FindFamilyByID(familyID uint) (*model.Family, error) {
 	return &family, nil
 }
 
+func SaveFamily(family *model.Family) error {
+	return db.Get().Save(family).Error
+}
+
 func ListFamilyMembers(familyID uint) ([]FamilyMemberProfile, error) {
 	var members []FamilyMemberProfile
 	err := db.Get().
@@ -70,4 +76,25 @@ func ListFamilyMembers(familyID uint) ([]FamilyMemberProfile, error) {
 		Order("family_members.id asc").
 		Find(&members).Error
 	return members, err
+}
+
+func DeleteFamilyByID(familyID uint) error {
+	return db.Get().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("family_id = ?", familyID).Delete(&model.BabyAction{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("family_id = ?", familyID).Delete(&model.Baby{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("family_id = ?", familyID).Delete(&model.FamilyInvite{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("family_id = ?", familyID).Delete(&model.FamilyMember{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("id = ?", familyID).Delete(&model.Family{}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }

@@ -3,6 +3,8 @@ package repository
 import (
 	"wxcloudrun-golang/internal/db"
 	"wxcloudrun-golang/internal/model"
+
+	"gorm.io/gorm"
 )
 
 func CreateBaby(baby *model.Baby) error {
@@ -22,4 +24,20 @@ func FindBabyByIDAndFamilyID(babyID, familyID uint) (*model.Baby, error) {
 		return nil, err
 	}
 	return &baby, nil
+}
+
+func SaveBaby(baby *model.Baby) error {
+	return db.Get().Save(baby).Error
+}
+
+func DeleteBabyByIDAndFamilyID(babyID, familyID uint) error {
+	return db.Get().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("family_id = ? and baby_id = ?", familyID, babyID).Delete(&model.BabyAction{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("id = ? and family_id = ?", babyID, familyID).Delete(&model.Baby{}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }

@@ -76,6 +76,41 @@ func CreateFamily(c *gin.Context) {
 	success(c, gin.H{"family_id": family.ID})
 }
 
+func UpdateFamily(c *gin.Context) {
+	familyID, err := strconv.ParseUint(c.Param("familyID"), 10, 64)
+	if err != nil || familyID == 0 {
+		fail(c, http.StatusBadRequest, errors.New("family_id 非法"))
+		return
+	}
+
+	var req createFamilyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	family, err := service.UpdateFamilyName(middleware.CurrentOpenID(c), uint(familyID), req.Name)
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+	success(c, gin.H{"family": family})
+}
+
+func DeleteFamily(c *gin.Context) {
+	familyID, err := strconv.ParseUint(c.Param("familyID"), 10, 64)
+	if err != nil || familyID == 0 {
+		fail(c, http.StatusBadRequest, errors.New("family_id 非法"))
+		return
+	}
+
+	if err := service.DeleteFamily(middleware.CurrentOpenID(c), uint(familyID)); err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+	success(c, gin.H{"deleted": true})
+}
+
 func GetFamilyDetail(c *gin.Context) {
 	familyID, err := strconv.ParseUint(c.Param("familyID"), 10, 64)
 	if err != nil || familyID == 0 {
