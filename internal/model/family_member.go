@@ -8,6 +8,7 @@ type FamilyMember struct {
 	UserID    uint      `gorm:"column:user_id;not null;uniqueIndex:idx_family_user" json:"user_id"`
 	Role      string    `gorm:"column:role;size:32;not null" json:"role"`
 	Nickname  string    `gorm:"column:nickname;size:64" json:"nickname"`
+	Relation  string    `gorm:"column:relation;size:32" json:"relation"`
 	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`
 }

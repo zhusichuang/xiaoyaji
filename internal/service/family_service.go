@@ -12,11 +12,30 @@ import (
 )
 
 type FamilyDetail struct {
-	Family       *model.Family                    `json:"family"`
-	CurrentUser  *model.User                      `json:"current_user"`
-	CurrentRole  string                           `json:"current_role"`
-	Members      []repository.FamilyMemberProfile `json:"members"`
-	ActiveInvite *model.FamilyInvite              `json:"active_invite"`
+	Family          *model.Family                    `json:"family"`
+	CurrentUser     *model.User                      `json:"current_user"`
+	CurrentRole     string                           `json:"current_role"`
+	CurrentRelation string                           `json:"current_relation"`
+	Members         []repository.FamilyMemberProfile `json:"members"`
+	ActiveInvite    *model.FamilyInvite              `json:"active_invite"`
+}
+
+func UpdateCurrentUserProfile(openID, nickname, avatarURL string) (*model.User, error) {
+	user, err := repository.FindUserByOpenID(openID)
+	if err != nil {
+		return nil, err
+	}
+
+	if nickname == "" {
+		return nil, errors.New("昵称不能为空")
+	}
+
+	user.Nickname = nickname
+	user.AvatarURL = avatarURL
+	if err := repository.SaveUser(user); err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func CurrentUser(openID string) (*model.User, error) {
@@ -61,12 +80,26 @@ func GetFamilyDetail(openID string, familyID uint) (*FamilyDetail, error) {
 	}
 
 	return &FamilyDetail{
-		Family:       family,
-		CurrentUser:  user,
-		CurrentRole:  member.Role,
-		Members:      members,
-		ActiveInvite: invite,
+		Family:          family,
+		CurrentUser:     user,
+		CurrentRole:     member.Role,
+		CurrentRelation: member.Relation,
+		Members:         members,
+		ActiveInvite:    invite,
 	}, nil
+}
+
+func UpdateMyFamilyRelation(openID string, familyID uint, relation string) (*model.FamilyMember, error) {
+	_, member, err := RequireFamilyMember(openID, familyID)
+	if err != nil {
+		return nil, err
+	}
+
+	member.Relation = strings.TrimSpace(relation)
+	if err := repository.SaveFamilyMember(member); err != nil {
+		return nil, err
+	}
+	return member, nil
 }
 
 func CreateFamilyInviteCode(openID string, familyID uint) (*model.FamilyInvite, error) {

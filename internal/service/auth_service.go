@@ -49,7 +49,7 @@ func EnsureUserAndDefaultFamily(openID string) (*model.User, []model.Family, err
 		FamilyID: family.ID,
 		UserID:   user.ID,
 		Role:     "owner",
-		Nickname: "我",
+		Nickname: user.Nickname,
 	}
 	if err := repository.CreateFamilyMember(member); err != nil {
 		return nil, nil, err

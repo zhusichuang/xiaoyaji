@@ -13,6 +13,7 @@ type FamilyMemberProfile struct {
 	UserID       uint   `json:"user_id"`
 	Role         string `json:"role"`
 	Nickname     string `json:"nickname"`
+	Relation     string `json:"relation"`
 	UserNickname string `json:"user_nickname"`
 	AvatarURL    string `json:"avatar_url"`
 }
@@ -45,6 +46,10 @@ func FindFamilyMember(familyID, userID uint) (*model.FamilyMember, error) {
 	return &member, nil
 }
 
+func SaveFamilyMember(member *model.FamilyMember) error {
+	return db.Get().Save(member).Error
+}
+
 func FindFamilyByID(familyID uint) (*model.Family, error) {
 	var family model.Family
 	err := db.Get().Where("id = ?", familyID).First(&family).Error
@@ -68,6 +73,7 @@ func ListFamilyMembers(familyID uint) ([]FamilyMemberProfile, error) {
 			family_members.user_id,
 			family_members.role,
 			family_members.nickname,
+			family_members.relation,
 			users.nickname as user_nickname,
 			users.avatar_url
 		`).

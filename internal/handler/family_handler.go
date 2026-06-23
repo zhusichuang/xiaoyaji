@@ -21,6 +21,10 @@ type joinFamilyRequest struct {
 	Code string `json:"code"`
 }
 
+type updateFamilyMemberRequest struct {
+	Relation string `json:"relation"`
+}
+
 func ListFamilies(c *gin.Context) {
 	user, err := service.CurrentUser(middleware.CurrentOpenID(c))
 	if err != nil {
@@ -66,7 +70,7 @@ func CreateFamily(c *gin.Context) {
 		FamilyID: family.ID,
 		UserID:   user.ID,
 		Role:     "owner",
-		Nickname: "我",
+		Nickname: user.Nickname,
 	}
 	if err := repository.CreateFamilyMember(member); err != nil {
 		fail(c, http.StatusInternalServerError, err)
@@ -157,4 +161,26 @@ func JoinFamily(c *gin.Context) {
 	}
 
 	success(c, gin.H{"family": family})
+}
+
+func UpdateMyFamilyProfile(c *gin.Context) {
+	familyID, err := strconv.ParseUint(c.Param("familyID"), 10, 64)
+	if err != nil || familyID == 0 {
+		fail(c, http.StatusBadRequest, errors.New("family_id 非法"))
+		return
+	}
+
+	var req updateFamilyMemberRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	member, err := service.UpdateMyFamilyRelation(middleware.CurrentOpenID(c), uint(familyID), req.Relation)
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	success(c, gin.H{"member": member})
 }
