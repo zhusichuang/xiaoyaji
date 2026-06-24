@@ -31,6 +31,56 @@ func CreateAction(c *gin.Context) {
 	success(c, gin.H{"action_id": action.ID})
 }
 
+func GetAction(c *gin.Context) {
+	actionID, err := strconv.ParseUint(c.Param("actionID"), 10, 64)
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	action, err := service.GetAction(middleware.CurrentOpenID(c), uint(actionID))
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+	success(c, action)
+}
+
+func UpdateAction(c *gin.Context) {
+	actionID, err := strconv.ParseUint(c.Param("actionID"), 10, 64)
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	var req service.UpdateActionInput
+	if err := c.ShouldBindJSON(&req); err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	action, err := service.UpdateAction(middleware.CurrentOpenID(c), uint(actionID), req)
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+	success(c, gin.H{"action": action})
+}
+
+func DeleteAction(c *gin.Context) {
+	actionID, err := strconv.ParseUint(c.Param("actionID"), 10, 64)
+	if err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := service.DeleteAction(middleware.CurrentOpenID(c), uint(actionID)); err != nil {
+		fail(c, http.StatusBadRequest, err)
+		return
+	}
+	success(c, gin.H{"deleted": true})
+}
+
 func BatchCreateActions(c *gin.Context) {
 	var req batchCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

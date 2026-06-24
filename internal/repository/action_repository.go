@@ -23,11 +23,30 @@ func CreateAction(action *model.BabyAction) error {
 
 func FindActionByRequestID(familyID uint, requestID string) (*model.BabyAction, error) {
 	var action model.BabyAction
-	err := db.Get().Where("family_id = ? and client_request_id = ?", familyID, requestID).First(&action).Error
+	err := db.Get().Where("family_id = ? and client_request_id = ? and deleted = ?", familyID, requestID, false).First(&action).Error
 	if err != nil {
 		return nil, err
 	}
 	return &action, nil
+}
+
+func FindActionByID(actionID uint) (*model.BabyAction, error) {
+	var action model.BabyAction
+	err := db.Get().Where("id = ? and deleted = ?", actionID, false).First(&action).Error
+	if err != nil {
+		return nil, err
+	}
+	return &action, nil
+}
+
+func UpdateAction(action *model.BabyAction) error {
+	return db.Get().Save(action).Error
+}
+
+func SoftDeleteAction(actionID uint) error {
+	return db.Get().Model(&model.BabyAction{}).Where("id = ?", actionID).Updates(map[string]interface{}{
+		"deleted": true,
+	}).Error
 }
 
 func ListActions(input ListActionsInput) ([]model.BabyAction, error) {

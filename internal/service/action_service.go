@@ -22,6 +22,12 @@ type CreateActionInput struct {
 	ClientRequestID string                 `json:"client_request_id"`
 }
 
+type UpdateActionInput struct {
+	ActionTime string                 `json:"action_time"`
+	Summary    string                 `json:"summary"`
+	Data       map[string]interface{} `json:"data"`
+}
+
 type ListActionInput struct {
 	FamilyID   uint
 	BabyID     uint
@@ -113,6 +119,57 @@ func BatchCreateActions(openID string, familyID uint, records []types.RecordPayl
 		result = append(result, *action)
 	}
 	return result, nil
+}
+
+func GetAction(openID string, actionID uint) (ActionView, error) {
+	action, err := repository.FindActionByID(actionID)
+	if err != nil {
+		return ActionView{}, err
+	}
+
+	if _, _, err := RequireFamilyMember(openID, action.FamilyID); err != nil {
+		return ActionView{}, err
+	}
+
+	return buildActionView(*action), nil
+}
+
+func UpdateAction(openID string, actionID uint, input UpdateActionInput) (ActionView, error) {
+	action, err := repository.FindActionByID(actionID)
+	if err != nil {
+		return ActionView{}, err
+	}
+
+	if _, _, err := RequireFamilyMember(openID, action.FamilyID); err != nil {
+		return ActionView{}, err
+	}
+
+	actionTime, err := util.ParseRFC3339(input.ActionTime)
+	if err != nil {
+		return ActionView{}, fmt.Errorf("action_time 格式错误: %w", err)
+	}
+
+	action.ActionTime = actionTime
+	action.Summary = input.Summary
+	action.DataJSON = util.MustMarshal(input.Data)
+	if err := repository.UpdateAction(action); err != nil {
+		return ActionView{}, err
+	}
+
+	return buildActionView(*action), nil
+}
+
+func DeleteAction(openID string, actionID uint) error {
+	action, err := repository.FindActionByID(actionID)
+	if err != nil {
+		return err
+	}
+
+	if _, _, err := RequireFamilyMember(openID, action.FamilyID); err != nil {
+		return err
+	}
+
+	return repository.SoftDeleteAction(actionID)
 }
 
 func ListActions(openID string, input ListActionInput) ([]ActionView, error) {
